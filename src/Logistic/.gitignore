@@ -1,0 +1,9 @@
+*.sdf
+*.opensdf
+*.suo
+*.vcxproj.user
+*.aps
+**/ipch/*
+**/Debug/*
+**/Release/*
+ReadMe.txt

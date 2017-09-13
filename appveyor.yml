@@ -1,0 +1,16 @@
+version: '{build}'
+
+image:
+  - Visual Studio 2013
+
+configuration:
+  - Release
+
+install:
+  - git submodule update --init --recursive
+
+build:
+  project: src\Logistic\Logistic.sln
+
+artifacts:
+  - path: 'src\Logistic\%CONFIGURATION%\Logistic.exe'

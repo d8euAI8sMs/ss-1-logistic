@@ -39,28 +39,19 @@ CBitmap bifurc_bitmap;
 bool bifurc_bitmap_visibility = true;
 plot::world_t bifurc_world{2, 4, 0, 1};
 
-// to reduce a number of ordinates in dataset
-struct quantized_t
+struct graph_node_t
 {
-    double y;
-
-    quantized_t(double y = 0) : y(y) { }
+	plot::point < double > point;
+	std::vector < graph_node_t * > successors;
 };
 
-bool operator < (const quantized_t & q, const quantized_t & other)  { return (other.y - q.y) >= 1e-5;    }
-
-bool operator == (const quantized_t & q, const quantized_t & other) { return abs(other.y - q.y) <= 1e-5; }
-
-bool operator != (const quantized_t & q, const quantized_t & other) { return abs(other.y - q.y) > 1e-5;  }
-
-struct multisample_t
+double weak_less_double_eps = 1e-4;
+class weak_less_double
 {
-    double x;
-    std::map < quantized_t, bool > ordinates;
-    // don't split onto dataset and internal tracer state holder
+public: bool operator () (const double &d1, const double &d2) { return (d2 - d1) >= weak_less_double_eps; }
 };
 
-std::vector<multisample_t> samples;
+std::vector < std::vector < graph_node_t > > graph;
 
 CLogisticDlg::CLogisticDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CLogisticDlg::IDD, pParent)
@@ -71,13 +62,10 @@ CLogisticDlg::CLogisticDlg(CWnd* pParent /*=NULL*/)
     , mDrawBitmap(TRUE)
     , mIterations(100)
     , mMinIterations(100)
-    , mMaxR(3.55)
     , mDrawTrace(FALSE)
     , mBif1Str(_T(""))
     , mBif2Str(_T(""))
     , mBif3Str(_T(""))
-    , mBifurcThr(8)
-    , mMaxBifurcR(3.46)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
@@ -93,110 +81,21 @@ CLogisticDlg::CLogisticDlg(CWnd* pParent /*=NULL*/)
         .with_layer(std::make_unique<plot::bitmap_drawable>(&bifurc_bitmap, &bifurc_bitmap_visibility))
         .with_custom([this] (CDC &dc, const plot::viewport &bounds) {
             if (!mDrawTrace) return;
-            auto pen = plot::palette::pen(RGB(0,190,0), 2);
-            dc.SelectObject(pen.get());
-            std::vector < plot::point<double> > interesting;
-            TraceDiagram(1e-2, 5, mMaxR, [this, &dc, &bounds, &interesting]
-                         (plot::point<double> src, plot::point<double> dst1, plot::point<double> dst2, int n_interesting_points)
+            std::vector < const graph_node_t * > stack;
+            for each (auto &node in graph[0])
             {
-                if (dst1.x != 0)
-                {
-                    dc.MoveTo(bounds.world_to_screen().xy(src));
-                    dc.LineTo(bounds.world_to_screen().xy(dst1));
-                }
-                if (dst2.x != 0)
-                {
-                    dc.MoveTo(bounds.world_to_screen().xy(src));
-                    dc.LineTo(bounds.world_to_screen().xy(dst2));
-                }
-                if ((dst1.x != 0) && (dst2.x != 0) && (n_interesting_points > mBifurcThr))
-                {
-                    auto brush = plot::palette::brush(RGB(180, 0, 0));
-                    auto point = bounds.world_to_screen().xy(src);
-                    RECT rect;
-                    rect.left = point.x - 2; rect.top = point.y - 2;
-                    rect.right = point.x + 2; rect.bottom = point.y + 2;
-                    dc.FillRect(&rect, brush.get());
-                    interesting.push_back(src);
-                }
-            });
-            const int x_quants = 100, y_quants = 100;
-            const double stop_at = mMaxBifurcR;
-            std::vector<std::vector<plot::point<double>>> x_projection(x_quants), y_projection(y_quants);
-            for each (auto &p in interesting)
-            {
-                if (p.x > stop_at) continue;
-                x_projection[(p.x - bifurc_world.xmin) / (bifurc_world.xmax - bifurc_world.xmin) * x_quants].push_back(p);
-                y_projection[(p.y - bifurc_world.ymin) / (bifurc_world.ymax - bifurc_world.ymin) * y_quants].push_back(p);
+                stack.push_back(&node);
             }
-            
-            int current_region = -1;
-            for (int i = 0; i < x_projection.size(); ++i)
+            while (!stack.empty())
             {
-                auto &x_prj = x_projection[i];
-                if (!x_prj.empty() && (current_region != -1))
+                const graph_node_t * node = stack.back(); stack.pop_back();
+                for each (auto next in node->successors)
                 {
-                    auto &region = x_projection[current_region];
-                    region.insert(region.end(), x_prj.begin(), x_prj.end());
-                    x_prj.clear();
-                }
-                else if (!x_prj.empty())
-                {
-                    current_region = i;
-                }
-                else
-                {
-                    current_region = -1;
+                    dc.MoveTo(bounds.world_to_screen().xy(node->point));
+                    dc.LineTo(bounds.world_to_screen().xy(next->point));
+                    stack.push_back(next);
                 }
             }
-            current_region = -1;
-            for (int i = 0; i < y_projection.size(); ++i)
-            {
-                auto &x_prj = y_projection[i];
-                if (!x_prj.empty() && (current_region != -1))
-                {
-                    auto &region = y_projection[current_region];
-                    region.insert(region.end(), x_prj.begin(), x_prj.end());
-                    x_prj.clear();
-                }
-                else if (!x_prj.empty())
-                {
-                    current_region = i;
-                }
-                else
-                {
-                    current_region = -1;
-                }
-            }
-            for each (auto &x_prj in x_projection)
-            {
-                if (!x_prj.empty())
-                {
-                    for each (auto &y_prj in y_projection)
-                    {
-                        if (!y_prj.empty())
-                        {
-                            bool found = false;
-                            for each (auto &p in x_prj)
-                            {
-                                for each (auto &p2 in y_prj)
-                                {
-                                    if ((p.x == p2.x) && (p.y == p2.y))
-                                    {
-                                        if (bif1.x == 0) bif1 = p;
-                                        else if (bif2.x == 0) bif2 = p;
-                                        else if (bif3.x == 0) bif3 = p;
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (found) break;
-                            }
-                        }
-                    }
-                }
-            }
-            return;
         })
         .with_ticks(plot::palette::pen(RGB(150, 150, 0)))
         .with_x_ticks(0, 20, 2)
@@ -218,13 +117,10 @@ void CLogisticDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Check(pDX, IDC_CHECK1, mDrawBitmap);
     DDX_Text(pDX, IDC_EDIT4, mIterations);
     DDX_Text(pDX, IDC_EDIT3, mMinIterations);
-    DDX_Text(pDX, IDC_EDIT9, mMaxR);
     DDX_Check(pDX, IDC_CHECK2, mDrawTrace);
     DDX_Text(pDX, IDC_BIF1, mBif1Str);
     DDX_Text(pDX, IDC_BIF2, mBif2Str);
     DDX_Text(pDX, IDC_BIF3, mBif3Str);
-    DDX_Text(pDX, IDC_EDIT7, mBifurcThr);
-    DDX_Text(pDX, IDC_EDIT8, mMaxBifurcR);
 }
 
 BEGIN_MESSAGE_MAP(CLogisticDlg, CDialogEx)
@@ -322,26 +218,56 @@ void CLogisticDlg::OnBnClickedButton2()
     CBitmap working_bitmap; working_bitmap.CreateBitmap(mBitmapWidth, mBitmapHeight, 1, 1, NULL);
     workingDC.SelectObject(&working_bitmap);
 
-    samples.clear();
-    samples.resize(mBitmapWidth);
+	std::set < double, weak_less_double > points;
+	graph.clear();
+	graph.resize(mBitmapWidth);
 
     const double rmin = bifurc_world.xmin, rmax = bifurc_world.xmax;
-    const double xmin = bifurc_world.ymin, xmax = bifurc_world.ymax;
-    for (int m = 0; m < mIterations; ++m)
+	const double xmin = bifurc_world.ymin, xmax = bifurc_world.ymax;
+    for (size_t j = 0; j < mBitmapWidth; ++j)
     {
-        double x0 = (double)rand() / RAND_MAX;
-        for (size_t j = 0; j < mBitmapWidth; ++j)
-        {
-            double r = rmin + (rmax - rmin) * j / (double)mBitmapWidth;
-            double x = x0;
-            for (int k = 0; k < mMinIterations; ++k, x = logistic_fn(x, r))
-                ;
-            int i = mBitmapHeight - x * mBitmapHeight;
-            workingDC.SetPixel(j, i, RGB(255,255,255));
-            memDC.SetPixel(min((double) j / mBitmapWidth * BITMAP_WIDTH, BITMAP_WIDTH), BITMAP_HEIGHT - min(x * BITMAP_HEIGHT, BITMAP_HEIGHT), RGB(255,255,255));
-            samples[j].x = r;
-            samples[j].ordinates.insert({ x, false });
-        }
+        double r = rmin + (rmax - rmin) * j / (double)mBitmapWidth;
+		for (int m = 0; m < mIterations; ++m)
+		{
+			double x = 0;
+            while (x == 0)
+            {
+                x = (double)rand() / RAND_MAX;
+			    for (int k = 0; k < mMinIterations; ++k, x = logistic_fn(x, r))
+			    	;
+            }
+			int i = mBitmapHeight - x * mBitmapHeight;
+			workingDC.SetPixel(j, i, RGB(255, 255, 255));
+			memDC.SetPixel(min((double)j / mBitmapWidth * BITMAP_WIDTH, BITMAP_WIDTH), BITMAP_HEIGHT - min(x * BITMAP_HEIGHT, BITMAP_HEIGHT), RGB(255, 255, 255));
+			points.insert(x);
+		}
+        graph[j].resize(points.size());
+        int k = 0;
+		for each (double x in points)
+		{
+            graph[j][k].point = { r, x };
+			graph_node_t &current = graph[j][k];
+			if (j != 0)
+			{
+				double distance = std::numeric_limits<double>::infinity();
+				graph_node_t *closest_node = nullptr;
+				for (std::vector < graph_node_t >::iterator it = graph[j - 1].begin(); it != graph[j - 1].end(); ++it)
+				{
+					double d;
+					if ((d = ((it->point.x - r) * (it->point.x - r) + (it->point.y - x) * (it->point.y - x))) < distance)
+					{
+						distance = d;
+						closest_node = &*it;
+					}
+				}
+				if (closest_node != nullptr)
+				{
+					closest_node->successors.push_back(&current);
+				}
+			}
+            ++k;
+		}
+		points.clear();
     }
 
     CImage image;
@@ -365,73 +291,6 @@ void CLogisticDlg::OnBnClickedCheck1()
     UpdateData(TRUE);
     bifurc_bitmap_visibility = mDrawBitmap;
     mBifurcPlotCtrl.RedrawWindow();
-}
-
-void CLogisticDlg::TraceDiagram(double y_eps, int x_eps, double x_max,
-                                std::function<void(plot::point<double> src, plot::point<double> dst1, plot::point<double> dst2, int n_interesting_points)> callback)
-{
-    if (samples.empty() || samples.front().ordinates.empty()) return;
-    for (std::vector < multisample_t >::iterator it0 = samples.begin(); it0 < samples.end(); ++it0)
-    {
-        for (std::map < quantized_t, bool >::iterator it = it0->ordinates.begin(); it != it0->ordinates.end(); ++it)
-        {
-            it->second = false;
-        }
-    }
-    std::list<std::pair<int, quantized_t>> stack;
-    for each (auto a in samples.front().ordinates)
-    {
-        stack.emplace_back(0, a.first);
-    }
-    while (!stack.empty())
-    {
-        auto p = stack.back(); stack.pop_back();
-        if (samples[p.first].x > x_max) continue;
-        plot::point<double> top, bottom;
-        quantized_t begin = { p.second.y - y_eps }, end = { p.second.y + y_eps };
-        int n_interesting_points = 0;
-        for (int i = 1; i <= x_eps; ++i)
-        {
-            if ((p.first + i >= samples.size()) || ((top.y != 0) && (bottom.y != 0))) break;
-            std::pair<const quantized_t, bool> *last = 0;
-            for (std::map<quantized_t, bool>::iterator it = samples[p.first + i].ordinates.begin(); it != samples[p.first + i].ordinates.end(); ++it)
-            {
-                if ((begin < it->first) && (it->first < end))
-                {
-                    ++n_interesting_points;
-                    if (it->second) continue;
-                    if (top.y == 0)
-                    {
-                        top = { samples[p.first + i].x, it->first.y };
-                        stack.push_back({ p.first + i, top.y });
-                        it->second = true;
-                    }
-                    else
-                    {
-                        if (bottom.y == 0)
-                        {
-                            std::map<quantized_t, bool>::iterator it2 = it;
-                            if ((++it2) == samples[p.first + i].ordinates.end())
-                            {
-                                bottom = { samples[p.first + i].x, it->first.y };
-                                stack.push_back({ p.first + i, bottom.y });
-                                it->second = true;
-                            }
-                        }
-                    }
-                    last = &*it;
-                }
-                else if (((last != 0) && (top.y != last->first.y)) && (bottom.y == 0))
-                {
-                    if (it->second) continue;
-                    bottom = { samples[p.first + i].x, last->first.y };
-                    stack.push_back({ p.first + i, bottom.y });
-                    last->second = true;
-                }
-            }
-        }
-        callback({ samples[p.first].x, p.second.y }, top, bottom, n_interesting_points);
-    }
 }
 
 void CLogisticDlg::OnBnClickedCheck2()

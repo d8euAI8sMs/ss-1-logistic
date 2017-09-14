@@ -43,9 +43,6 @@ public:
     int mIterations;
     int mMinIterations;
     afx_msg void OnBnClickedCheck1();
-    void TraceDiagram(double y_eps, int x_eps, double x_max,
-                      std::function<void(plot::point<double> src, plot::point<double> dst1, plot::point<double> dst2, int n_interesting_points)> callback);
-    double mMaxR;
     BOOL mDrawTrace;
     plot::point<double> bif1, bif2, bif3;
     afx_msg void OnBnClickedCheck2();
@@ -53,6 +50,4 @@ public:
     CString mBif1Str;
     CString mBif2Str;
     CString mBif3Str;
-    int mBifurcThr;
-    double mMaxBifurcR;
 };

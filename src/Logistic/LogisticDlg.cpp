@@ -45,10 +45,11 @@ struct graph_node_t
 	std::vector < graph_node_t * > successors;
 };
 
-double weak_less_double_eps = 1e-4;
 class weak_less_double
 {
-public: bool operator () (const double &d1, const double &d2) { return (d2 - d1) >= weak_less_double_eps; }
+private: double eps;
+public: weak_less_double(double eps) : eps(eps) { }
+public: bool operator () (const double &d1, const double &d2) { return (d2 - d1) >= eps; }
 };
 
 std::vector < std::vector < graph_node_t > > graph;
@@ -218,7 +219,7 @@ void CLogisticDlg::OnBnClickedButton2()
     CBitmap working_bitmap; working_bitmap.CreateBitmap(mBitmapWidth, mBitmapHeight, 1, 1, NULL);
     workingDC.SelectObject(&working_bitmap);
 
-	std::set < double, weak_less_double > points;
+	std::set < double, weak_less_double > points(weak_less_double(bifurc_world.height() * 1e-4));
 	graph.clear();
 	graph.resize(mBitmapWidth);
 

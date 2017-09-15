@@ -228,20 +228,26 @@ void CLogisticDlg::OnBnClickedButton2()
     for (size_t j = 0; j < mBitmapWidth; ++j)
     {
         double r = working_bounds.screen_to_world().x(j);
-		for (int m = 0; m < mIterations; ++m)
-		{
-			double x = 0;
-            while (x == 0)
-            {
-                x = (double)rand() / RAND_MAX;
-			    for (int k = 0; k < mMinIterations; ++k, x = logistic_fn(x, r))
-			    	;
-            }
-			int i = working_bounds.world_to_screen().y(x);
-			workingDC.SetPixel(j, i, RGB(255, 255, 255));
-			memDC.SetPixel(bifurc_bounds.world_to_screen().x(r), bifurc_bounds.world_to_screen().y(x), RGB(255, 255, 255));
-			points.insert(x);
-		}
+        int iterations = 0;
+        int old_points_size;
+        do
+        {
+            old_points_size = points.size();
+		    for (int m = 0; m < 100; ++m, ++iterations) // magic 100
+		    {
+		    	double x = 0;
+                while (x == 0)
+                {
+                    x = (double)rand() / RAND_MAX;
+		    	    for (int k = 0; k < mMinIterations; ++k, x = logistic_fn(x, r))
+		    	    	;
+                }
+		    	int i = working_bounds.world_to_screen().y(x);
+		    	workingDC.SetPixel(j, i, RGB(255, 255, 255));
+		    	memDC.SetPixel(bifurc_bounds.world_to_screen().x(r), bifurc_bounds.world_to_screen().y(x), RGB(255, 255, 255));
+		    	points.insert(x);
+		    }
+        } while ((iterations < mIterations) && (points.size() >= old_points_size + 10)); // magic 10 = 100 / 10
         graph[j].resize(points.size());
         int k = 0;
 		for each (double x in points)

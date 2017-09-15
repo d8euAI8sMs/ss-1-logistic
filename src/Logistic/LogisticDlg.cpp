@@ -101,7 +101,7 @@ CLogisticDlg::CLogisticDlg(CWnd* pParent /*=NULL*/)
         .with_ticks(plot::palette::pen(RGB(150, 150, 0)))
         .with_x_ticks(0, 20, 2)
         .with_y_ticks(0, 10, 2)
-        .in_world(bifurc_world)
+        .in_world(&bifurc_world)
         .build()
     );
 }
@@ -122,6 +122,10 @@ void CLogisticDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Text(pDX, IDC_BIF1, mBif1Str);
     DDX_Text(pDX, IDC_BIF2, mBif2Str);
     DDX_Text(pDX, IDC_BIF3, mBif3Str);
+    DDX_Text(pDX, IDC_EDIT9, bifurc_world.xmin);
+    DDX_Text(pDX, IDC_EDIT7, bifurc_world.xmax);
+    DDX_Text(pDX, IDC_EDIT10, bifurc_world.ymin);
+    DDX_Text(pDX, IDC_EDIT8, bifurc_world.ymax);
 }
 
 BEGIN_MESSAGE_MAP(CLogisticDlg, CDialogEx)

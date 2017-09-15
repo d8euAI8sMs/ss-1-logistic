@@ -222,11 +222,12 @@ void CLogisticDlg::OnBnClickedButton2()
 	graph.clear();
 	graph.resize(mBitmapWidth);
 
-    const double rmin = bifurc_world.xmin, rmax = bifurc_world.xmax;
-	const double xmin = bifurc_world.ymin, xmax = bifurc_world.ymax;
+    plot::viewport bifurc_bounds = { { 0, BITMAP_WIDTH, 0, BITMAP_HEIGHT }, bifurc_world };
+    plot::viewport working_bounds = { { 0, mBitmapWidth, 0, mBitmapHeight }, bifurc_world };
+
     for (size_t j = 0; j < mBitmapWidth; ++j)
     {
-        double r = rmin + (rmax - rmin) * j / (double)mBitmapWidth;
+        double r = working_bounds.screen_to_world().x(j);
 		for (int m = 0; m < mIterations; ++m)
 		{
 			double x = 0;
@@ -236,9 +237,9 @@ void CLogisticDlg::OnBnClickedButton2()
 			    for (int k = 0; k < mMinIterations; ++k, x = logistic_fn(x, r))
 			    	;
             }
-			int i = mBitmapHeight - x * mBitmapHeight;
+			int i = working_bounds.world_to_screen().y(x);
 			workingDC.SetPixel(j, i, RGB(255, 255, 255));
-			memDC.SetPixel(min((double)j / mBitmapWidth * BITMAP_WIDTH, BITMAP_WIDTH), BITMAP_HEIGHT - min(x * BITMAP_HEIGHT, BITMAP_HEIGHT), RGB(255, 255, 255));
+			memDC.SetPixel(bifurc_bounds.world_to_screen().x(r), bifurc_bounds.world_to_screen().y(x), RGB(255, 255, 255));
 			points.insert(x);
 		}
         graph[j].resize(points.size());

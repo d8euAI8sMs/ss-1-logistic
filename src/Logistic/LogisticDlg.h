@@ -50,4 +50,5 @@ public:
     CString mBif1Str;
     CString mBif2Str;
     CString mBif3Str;
+    afx_msg void OnStnDblclickBifurc();
 };

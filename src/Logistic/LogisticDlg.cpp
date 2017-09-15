@@ -136,6 +136,7 @@ BEGIN_MESSAGE_MAP(CLogisticDlg, CDialogEx)
     ON_BN_CLICKED(IDC_CHECK1, &CLogisticDlg::OnBnClickedCheck1)
     ON_BN_CLICKED(IDC_CHECK2, &CLogisticDlg::OnBnClickedCheck2)
     ON_BN_CLICKED(IDC_BUTTON3, &CLogisticDlg::OnBnClickedButton3)
+    ON_STN_DBLCLK(IDC_BIFURC, &CLogisticDlg::OnStnDblclickBifurc)
 END_MESSAGE_MAP()
 
 
@@ -367,4 +368,51 @@ void CLogisticDlg::OnBnClickedButton3()
         if (bif3.x != 0) mBif3Str.Format(_T("%.2lf;%.2lf"), bif3.x, bif3.y);
         UpdateData(FALSE);
     }
+}
+
+
+void CLogisticDlg::OnStnDblclickBifurc()
+{
+    POINT p;
+    GetCursorPos(&p);
+    mBifurcPlotCtrl.ScreenToClient(&p);
+
+    RECT rect;
+    mBifurcPlotCtrl.GetClientRect(&rect);
+
+    plot::screen_t s { rect.left, rect.right, rect.top, rect.bottom };
+
+    plot::viewport vp { s, bifurc_world };
+
+    plot::point < double > c = vp.screen_to_world().xy({ p.x, p.y });
+    plot::world_t new_world
+    {
+        c.x - bifurc_world.width() / 8,
+        c.x + bifurc_world.width() / 8,
+        c.y - bifurc_world.width() / 8,
+        c.y + bifurc_world.width() / 8
+    };
+    if (new_world.xmin < bifurc_world.xmin)
+    {
+        new_world.xmax += (bifurc_world.xmin - new_world.xmin);
+        new_world.xmin = bifurc_world.xmin;
+    }
+    if (new_world.xmax > bifurc_world.xmax)
+    {
+        new_world.xmin -= (new_world.xmax - bifurc_world.xmax);
+        new_world.xmax = bifurc_world.xmax;
+    }
+    if (new_world.ymin < bifurc_world.ymin)
+    {
+        new_world.ymax += (bifurc_world.ymin - new_world.ymin);
+        new_world.ymin = bifurc_world.ymin;
+    }
+    if (new_world.ymax > bifurc_world.ymax)
+    {
+        new_world.ymin -= (new_world.ymax - bifurc_world.ymax);
+        new_world.ymax = bifurc_world.ymax;
+    }
+    bifurc_world = new_world;
+    UpdateData(FALSE);
+    OnBnClickedButton2();
 }

@@ -254,7 +254,7 @@ void CLogisticDlg::OnBnClickedButton2()
 				for (std::vector < graph_node_t >::iterator it = graph[j - 1].begin(); it != graph[j - 1].end(); ++it)
 				{
 					double d;
-					if ((d = ((it->point.x - r) * (it->point.x - r) + (it->point.y - x) * (it->point.y - x))) < distance)
+					if ((d = abs(it->point.y - x)) < distance)
 					{
 						distance = d;
 						closest_node = &*it;

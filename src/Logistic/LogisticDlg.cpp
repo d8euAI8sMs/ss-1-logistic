@@ -97,6 +97,21 @@ CLogisticDlg::CLogisticDlg(CWnd* pParent /*=NULL*/)
                     stack.push_back(next);
                 }
             }
+            if (bif1.x != 0)
+            {
+                plot::point<int> p = bounds.world_to_screen().xy(bif1);
+                dc.FillSolidRect(p.x - 3, p.y - 3, 6, 6, RGB(180, 0, 0));
+            }
+            if (bif2.x != 0)
+            {
+                plot::point<int> p = bounds.world_to_screen().xy(bif2);
+                dc.FillSolidRect(p.x - 3, p.y - 3, 6, 6, RGB(180, 0, 0));
+            }
+            if (bif3.x != 0)
+            {
+                plot::point<int> p = bounds.world_to_screen().xy(bif3);
+                dc.FillSolidRect(p.x - 3, p.y - 3, 6, 6, RGB(180, 0, 0));
+            }
         })
         .with_ticks(plot::palette::pen(RGB(150, 150, 0)))
         .with_x_ticks(0, 20, 2)
@@ -313,6 +328,40 @@ void CLogisticDlg::OnBnClickedButton2()
     }
     
     image.Save(_T("bifurc-traced.bmp"), Gdiplus::ImageFormatBMP);
+    
+    bif1 = bif2 = bif3 = {};
+
+    for each (auto &v in graph)
+    {
+        for each (auto &p in v)
+        {
+            if (p.successors.size() > 1)
+            {
+                if (bif1.x == 0) bif1 = p.point;
+                else if (bif2.x == 0)
+                {
+                    if ((p.point.x - bif1.x) * (p.point.x - bif1.x) + (p.point.y - bif1.y) * (p.point.y - bif1.y) >
+                        (bifurc_world.width() * bifurc_world.width() + bifurc_world.height() * bifurc_world.height()) * 1e-2)
+                    {
+                        bif2 = p.point;
+                    }
+                }
+                else if (bif3.x == 0)
+                {
+                    if ((p.point.x - bif2.x) * (p.point.x - bif2.x) + (p.point.y - bif2.y) * (p.point.y - bif2.y) >
+                        (bifurc_world.width() * bifurc_world.width() + bifurc_world.height() * bifurc_world.height()) * 1e-2)
+                    {
+                        bif3 = p.point;
+                    }
+                }
+            }
+        }
+        if ((bif1.x != 0) && (bif2.x != 0) && (bif3.x != 0)) break;
+    }
+    
+    if (bif1.x != 0) mBif1Str.Format(_T("( %.5lf ; %.5lf )"), bif1.x, bif1.y);
+    if (bif2.x != 0) mBif2Str.Format(_T("( %.5lf ; %.5lf )"), bif2.x, bif2.y);
+    if (bif3.x != 0) mBif3Str.Format(_T("( %.5lf ; %.5lf )"), bif3.x, bif3.y);
 
     workingDC.SelectObject((CBitmap *) NULL);
     workingDC.DeleteDC();
@@ -334,19 +383,7 @@ void CLogisticDlg::OnBnClickedCheck1()
 void CLogisticDlg::OnBnClickedCheck2()
 {
     UpdateData(TRUE);
-    if (mDrawTrace)
-    {
-        bif1 = bif2 = bif3 = {};
-        mBif1Str = mBif2Str = mBif3Str = "";
-    }
     mBifurcPlotCtrl.RedrawWindow();
-    if (mDrawTrace)
-    {
-        if (bif1.x != 0) mBif1Str.Format(_T("%.2lf;%.2lf"), bif1.x, bif1.y);
-        if (bif2.x != 0) mBif2Str.Format(_T("| %.2lf;%.2lf |"), bif2.x, bif2.y);
-        if (bif3.x != 0) mBif3Str.Format(_T("%.2lf;%.2lf"), bif3.x, bif3.y);
-        UpdateData(FALSE);
-    }
 }
 
 
@@ -354,20 +391,7 @@ void CLogisticDlg::OnBnClickedButton3()
 {
     UpdateData(TRUE);
     mDrawTrace = TRUE;
-    if (mDrawTrace)
-    {
-        bif1 = bif2 = bif3 = {};
-        mBif1Str = mBif2Str = mBif3Str = "";
-    }
     mBifurcPlotCtrl.RedrawWindow();
-    UpdateData(FALSE);
-    if (mDrawTrace)
-    {
-        if (bif1.x != 0) mBif1Str.Format(_T("%.2lf;%.2lf"), bif1.x, bif1.y);
-        if (bif2.x != 0) mBif2Str.Format(_T("| %.2lf;%.2lf |"), bif2.x, bif2.y);
-        if (bif3.x != 0) mBif3Str.Format(_T("%.2lf;%.2lf"), bif3.x, bif3.y);
-        UpdateData(FALSE);
-    }
 }
 
 

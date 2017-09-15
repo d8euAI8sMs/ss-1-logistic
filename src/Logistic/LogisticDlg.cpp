@@ -281,10 +281,35 @@ void CLogisticDlg::OnBnClickedButton2()
     image.Attach(working_bitmap);
     image.Save(_T("bifurc.bmp"), Gdiplus::ImageFormatBMP);
     
-    workingDC.SelectObject((CBitmap *) NULL);
-    workingDC.DeleteDC();
     memDC.SelectObject((CBitmap *) NULL);
     memDC.DeleteDC();
+
+    auto black_brush = plot::palette::brush(0);
+    workingDC.FillRect(&(RECT)working_bounds.screen, black_brush.get());
+    
+    auto white_pen = plot::palette::pen(RGB(255, 255, 255));
+    workingDC.SelectObject(white_pen.get());
+
+    std::vector < const graph_node_t * > stack;
+    for each (auto &node in graph[0])
+    {
+        stack.push_back(&node);
+    }
+    while (!stack.empty())
+    {
+        const graph_node_t * node = stack.back(); stack.pop_back();
+        for each (auto next in node->successors)
+        {
+            workingDC.MoveTo(working_bounds.world_to_screen().xy(node->point));
+            workingDC.LineTo(working_bounds.world_to_screen().xy(next->point));
+            stack.push_back(next);
+        }
+    }
+    
+    image.Save(_T("bifurc-traced.bmp"), Gdiplus::ImageFormatBMP);
+
+    workingDC.SelectObject((CBitmap *) NULL);
+    workingDC.DeleteDC();
 
     mDrawTrace = FALSE;
     UpdateData(FALSE);

@@ -1,0 +1,233 @@
+%% ===============================================
+%% =============== Document Class ================
+%% ===============================================
+
+
+
+\documentclass[12pt,a4paper]{article}
+
+
+
+%% ===============================================
+%% =============== Packages ======================
+%% ===============================================
+
+
+
+%% Language Support
+\usepackage[T1,T2A] 		{fontenc}
+\usepackage[utf8]   		{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{microtype}
+\usepackage{csquotes}
+\usepackage[yyyymmdd,hhmmss]{datetime}
+
+%% Math
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtext}
+
+%% Layout & text
+%\usepackage{a4wide}
+\usepackage{lipsum}
+\usepackage{newfloat}
+\usepackage{caption}
+%%\usepackage{subcaption}
+\usepackage{titlesec}
+\usepackage{fancybox, fancyhdr} %% Colontitles
+\usepackage{indentfirst}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{mdframed}
+\usepackage[inline]{enumitem}
+\ifdefined\usegraphics
+    \usepackage{graphicx}
+    \usepackage{subfig}
+\fi
+\ifdefined\useappendix
+    \usepackage[titletoc,toc]{appendix}
+\fi
+\ifdefined\usealgo
+    \usepackage{algorithm2e}
+\fi
+\ifdefined\usecode
+    \usepackage[cache=false,newfloat]{minted}
+\fi
+
+
+
+
+%% ===============================================
+%% =============== Package Config ================
+%% ===============================================
+
+
+
+
+\ifdefined\usegraphics
+    \DeclareGraphicsExtensions{.pdf,.png,.jpg,.PNG}
+    \graphicspath{{./img/}}
+    \captionsetup[figure]{justification=centering}
+\fi
+\renewcommand{\thesubfigure}{\asbuk{subfigure}}
+\DeclareCaptionLabelSeparator{dotseparator}{. }
+\captionsetup{
+   labelsep=dotseparator
+}
+
+%% ===============================================
+
+\theoremstyle{definition}
+\newtheorem{definition}{\textls[150]{Определение}}[section]
+\theoremstyle{definition}
+\newtheorem{problem}{\textls[150]{Задача}}[section]
+
+%% ===============================================
+
+\setlist{nosep}
+\AddEnumerateCounter{\Asbuk}{\@Asbuk}{\CYRM}
+\AddEnumerateCounter{\asbuk}{\@asbuk}{\cyrm}
+
+%% ===============================================
+
+\geometry{left=1cm}
+\geometry{right=2cm}
+\geometry{top=2cm}
+\geometry{bottom=2cm}
+
+\numberwithin{equation}{section}
+
+\makeatletter
+
+\titleformat
+{\section} % command
+[block] % shape
+{\bfseries\Large\centering} % format
+{\thesection.\ } % label
+{0.5ex} % sep
+{} % before-code
+[] % after-code
+
+\titleformat
+{\subsection} % command
+[block] % shape
+{\bfseries\large\centering} % format
+{\thesubsection.\ } % label
+{0.5ex} % sep
+{} % before-code
+[] % after-code
+
+\makeatother
+
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0px}
+\renewcommand{\footrulewidth}{0px}
+\fancyhf{}
+\fancyfoot[C]{\bfseries\thepage}
+
+\renewcommand{\cleardoublepage}{\clearpage}
+
+\makeatletter
+\renewcommand{\@biblabel}[1]{#1.}
+\makeatother
+
+\makeatletter
+\let\ps@plain\ps@empty
+\makeatother
+
+\setlength{\parindent}{1cm}
+
+%% ===============================================
+
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
+
+\renewcommand{\sectionautorefname}{\S}
+\newcommand{\definitionautorefname}{опр.}
+\newcommand{\problemautorefname}{з.}
+
+%% ===============================================
+
+\ifdefined\usecode
+
+\usemintedstyle{vs}
+%%\SetupFloatingEnvironment{listing}{name=Листинг}
+\captionsetup[listing]{name=Листинг,justification=centering}
+
+\makeatletter
+\renewenvironment{minted@colorbg}[1]{
+    %\setlength{\fboxsep}{-\fboxrule}
+    \def\minted@bgcol{#1}
+    \noindent%
+    \begin{lrbox}{\minted@bgbox}
+        \begin{minipage}{\linewidth-2\fboxsep}}
+        {\end{minipage}
+    \end{lrbox}%
+    \colorbox{\minted@bgcol}{\usebox{\minted@bgbox}}}
+\makeatother
+
+\definecolor{mintedbg}{rgb}{1.0,1.0,1.0}
+%% \cppcode Environment
+\newminted{cpp}{
+    xleftmargin=2ex,
+    numbersep=1ex,
+    autogobble,
+    frame=lines,
+    framesep=2mm,
+    fontsize=\footnotesize,
+    linenos,
+    breaklines,
+    tabsize=4,
+    bgcolor=mintedbg
+}
+
+\fi
+
+%% ===============================================
+
+\ifdefined\useappendix
+
+\makeatletter
+\appto{\appendices}{\def\Hy@chapapp{Appendix}}
+\makeatother
+
+\renewcommand{\appendixtocname}{Приложения}
+\renewcommand{\appendixpagename}{Приложения}
+
+\fi
+
+%% ===============================================
+
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+
+%% ===============================================
+
+\ifdefined\usealgo
+
+\SetKwInput{KwData}{Исходные параметры}
+\SetKwInput{KwResult}{Результат}
+\SetKwInput{KwIn}{вход}
+\SetKwInput{KwOut}{выход}
+\SetKwIF{If}{ElseIf}{Else}{если}{тогда}{иначе если}{иначе}{конец если}
+\SetKwFor{While}{пока}{выполнять}{конец пока}
+\SetKw{KwTo}{до}
+\SetKw{KwRet}{вернуть}
+\SetKw{Return}{вернуть}
+\SetKwBlock{Begin}{начало}{конец}
+\SetKwSwitch{Switch}{Case}{Other}{проверить}{и выполнить}{вариант}{в противном случае}{конец вариант}{конец проверить}
+\SetKwFor{For}{от}{выполнять}{конец от}
+\SetKwFor{ForEach}{по всем}{выполнять}{конец по всем}
+\SetKwRepeat{Repeat}{выполнять}{пока}
+\SetAlgorithmName{Алгоритм}{алгоритм}{Список алгоритмов}
+
+\fi
+
+%% ===============================================

@@ -1,3 +1,33 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T1,T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{microtype}
+\usepackage{csquotes}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathtext}
+\usepackage{newfloat}
+\usepackage{caption}
+\usepackage{indentfirst}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{mdframed}
+\usepackage[inline]{enumitem}
+\usepackage{graphicx}
+\usepackage{subfig}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg,.PNG}
+\graphicspath{{./img/}}
+\captionsetup[figure]{justification=centering}
+\renewcommand{\thesubfigure}{\asbuk{subfigure}}
+\DeclareCaptionLabelSeparator{dotseparator}{. }
+\captionsetup{
+   labelsep=dotseparator
+}
+
+\begin{document}
+
 \section{Постановка задачи}
 
 \begin{enumerate}
@@ -68,3 +98,5 @@ x_{n+1} = R x_n \left(1 - x_n\right) \textrm{,}
 Выяснилось, что диаграмма является \enquote{самоподобной}, т.е. содержит однотипные структуры, по внешнему виду напоминающие графическое представление бинарного дерева.
 
 Были определены координаты первых трех точек бифуркации: $P_1 = \left(2.998, 0.66644\right)$, $P_{21} = \left(3.448, 0.44031\right)$, $P_{22} = \left(3.448, 0.84971\right)$ (дискретность шага по $R$ -- $0.002$).
+
+\end{document} 

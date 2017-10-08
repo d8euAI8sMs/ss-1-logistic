@@ -1,7 +1,6 @@
 #pragma once
 
 #include <util/common/plot/plot.h>
-#include <util/common/plot/common.h>
 #include <set>
 
 namespace plot
@@ -9,6 +8,12 @@ namespace plot
 
     class bitmap_drawable : public drawable
     {
+
+    public:
+
+        using ptr_t = plot::ptr_t < bitmap_drawable > ;
+
+        template < class ... T > static ptr_t create(T && ... t) { return plot::create < typename ptr_t::element_type > (std::forward < T > (t) ...); }
 
     public:
 
